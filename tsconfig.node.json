@@ -1,4 +1,16 @@
 {
-  "compilerOptions": { "composite": true, "skipLibCheck": true, "module": "ESNext", "moduleResolution": "Bundler", "allowJs": true, "noEmit": true },
-  "include": ["vite.config.ts", "netlify/functions/**/*.mjs"]
+  "compilerOptions": {
+    "composite": true,
+    "skipLibCheck": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowJs": true,
+    "noEmit": true
+  },
+  "include": [
+    "vite.config.ts",
+    "netlify/functions/**/*.mjs",
+    "server/**/*.mjs",
+    "api/**/*.js"
+  ]
 }

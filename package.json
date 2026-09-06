@@ -4,10 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "netlify dev",
+    "dev": "vercel dev",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "dev:netlify": "netlify dev",
+    "deploy": "vercel --prod",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
@@ -22,6 +25,7 @@
     "@vitejs/plugin-react": "^5.0.2",
     "netlify-cli": "^23.5.0",
     "typescript": "^5.9.2",
+    "vercel": "^59.11.7",
     "vite": "^7.1.4"
   }
 }

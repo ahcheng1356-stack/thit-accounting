@@ -1,11 +1,47 @@
 import { createClient } from "@supabase/supabase-js";
 import crypto from "node:crypto";
+import https from "node:https";
+
+function supabaseFetch(input, init = {}) {
+  const edgeIp = process.env.SUPABASE_EDGE_IP;
+  const url = new URL(typeof input === "string" || input instanceof URL ? input : input.url);
+  if (!edgeIp || url.hostname !== new URL(process.env.SUPABASE_URL).hostname) return fetch(input, init);
+
+  return new Promise((resolve, reject) => {
+    const sourceHeaders = init.headers || (input instanceof Request ? input.headers : undefined);
+    const headers = Object.fromEntries(new Headers(sourceHeaders).entries());
+    const request = https.request(url, {
+      method: init.method || (input instanceof Request ? input.method : "GET"),
+      headers,
+      servername: url.hostname,
+      lookup: (_hostname, options, callback) => options?.all
+        ? callback(null, [{ address: edgeIp, family: 4 }])
+        : callback(null, edgeIp, 4),
+    }, response => {
+      const chunks = [];
+      response.on("data", chunk => chunks.push(chunk));
+      response.on("end", () => resolve(new Response(Buffer.concat(chunks), {
+        status: response.statusCode || 500,
+        statusText: response.statusMessage,
+        headers: response.headers,
+      })));
+    });
+    request.on("error", reject);
+    if (init.signal) {
+      if (init.signal.aborted) request.destroy(new Error("Request aborted"));
+      else init.signal.addEventListener("abort", () => request.destroy(new Error("Request aborted")), { once: true });
+    }
+    const body = init.body;
+    if (body !== undefined && body !== null) request.write(body);
+    request.end();
+  });
+}
 
 export function db() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error("Supabase environment variables are missing");
-  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: supabaseFetch } });
 }
 
 export const json = (body, status = 200, headers = {}) => new Response(JSON.stringify(body), {
